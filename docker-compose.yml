@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  rust-wipe-panel:
+    build: .
+    container_name: rust-wipe-panel
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/app/data
+      - ./backups:/app/backups
+      - /path/to/your/rust/server:/rustserver:ro
+    environment:
+      - PORT=3000
+      - HOST=0.0.0.0
+      - RUST_HOST=host.docker.internal
+      - RUST_RCON_PORT=28016
+      - RUST_RCON_PASSWORD=your_rcon_password
+      - RUST_SERVER_DIR=/rustserver
+      - TZ=UTC
+      - ADMIN_USERNAME=admin
+      - ADMIN_PASSWORD=changeme
+      - SESSION_SECRET=change_this_random_string
+    env_file:
+      - .env
+networks:
+  default:
+    name: rust-network

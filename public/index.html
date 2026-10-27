@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rust Auto-Wipe Panel</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #121212;
+            color: #f5f5f5;
+        }
+        .navbar {
+            background-color: #1f1f1f !important;
+            border-bottom: 2px solid #dc3545;
+        }
+        .card {
+            background-color: #1f1f1f;
+            border: 1px solid #333;
+            color: #f5f5f5;
+        }
+        .card-header {
+            background-color: #2a2a2a;
+            border-bottom: 1px solid #333;
+            color: #ffffff;
+        }
+        .table {
+            color: #f5f5f5;
+        }
+        .table-dark {
+            --bs-table-bg: #1f1f1f;
+            --bs-table-border-color: #333;
+        }
+        .table-hover tbody tr:hover {
+            background-color: #2a2a2a;
+            color: #ffffff;
+        }
+        .btn-primary {
+            background-color: #dc3545;
+            border-color: #dc3545;
+        }
+        .btn-primary:hover {
+            background-color: #c82333;
+            border-color: #bd2130;
+        }
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .status-connected {
+            background-color: #28a745;
+        }
+        .status-disconnected {
+            background-color: #dc3545;
+        }
+        .nav-tabs {
+            border-bottom: 1px solid #333;
+        }
+        .nav-tabs .nav-link {
+            color: #d0d0d0;
+            background-color: transparent;
+            border: 1px solid transparent;
+        }
+        .nav-tabs .nav-link:hover {
+            color: #ffffff;
+            border-color: #333 #333 transparent;
+        }
+        .nav-tabs .nav-link.active {
+            background-color: #1f1f1f;
+            color: #ffffff;
+            border-color: #333 #333 #1f1f1f;
+        }
+        .form-control, .form-select {
+            background-color: #121212;
+            color: #f5f5f5;
+            border: 1px solid #444;
+        }
+        .form-control:focus, .form-select:focus {
+            background-color: #121212;
+            color: #ffffff;
+            border-color: #dc3545;
+            box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25);
+        }
+        .form-label {
+            color: #f5f5f5;
+        }
+        .modal-content {
+            background-color: #1f1f1f;
+            color: #ffffff;
+            border: 1px solid #333;
+        }
+        .modal-header {
+            border-bottom: 1px solid #333;
+            color: #ffffff;
+        }
+        .modal-header .modal-title {
+            color: #ffffff;
+        }
+        .modal-footer {
+            border-top: 1px solid #333;
+        }
+        .modal-body {
+            color: #ffffff;
+        }
+        .modal-body .form-label {
+            color: #ffffff;
+        }
+        .modal-body .form-check-label {
+            color: #ffffff;
+        }
+        .text-muted {
+            color: #b0b0b0 !important;
+        }
+        .navbar-text {
+            color: #f5f5f5;
+        }
+        code {
+            color: #ff6b6b;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#"><i class="bi bi-arrow-clockwise"></i> Rust Auto-Wipe Panel</a>
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text">
+                    <span class="status-indicator" id="rconStatus"></span>
+                    RCON: <span id="rconStatusText">Checking...</span>
+                </span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <ul class="nav nav-tabs" id="mainTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="dashboard-tab" data-bs-toggle="tab" data-bs-target="#dashboard" type="button">Dashboard</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="schedules-tab" data-bs-toggle="tab" data-bs-target="#schedules" type="button">Schedules</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="maps-tab" data-bs-toggle="tab" data-bs-target="#maps" type="button">Map Pool</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="customfiles-tab" data-bs-toggle="tab" data-bs-target="#customfiles" type="button">Custom Files</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button">Wipe History</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="rcon-tab" data-bs-toggle="tab" data-bs-target="#rcon" type="button">RCON Console</button>
+            </li>
+        </ul>
+
+        <div class="tab-content mt-3" id="mainTabsContent">
+            <!-- Dashboard Tab -->
+            <div class="tab-pane fade show active" id="dashboard" role="tabpanel">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="bi bi-lightning-charge"></i> Manual Wipe</h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="manualWipeForm">
+                                    <div class="mb-3">
+                                        <label class="form-label">Wipe Type</label>
+                                        <select class="form-select" id="wipeType" required>
+                                            <option value="full">Full Wipe (Map + Blueprints)</option>
+                                            <option value="map">Map Wipe Only</option>
+                                            <option value="blueprint">Blueprint Wipe Only</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Map Selection</label>
+                                        <select class="form-select" id="mapMode" onchange="toggleManualMapOptions()">
+                                            <option value="seed">Specific Seed</option>
+                                            <option value="random">Random Seed</option>
+                                            <option value="pool">Map Pool</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3" id="manualSeedDiv">
+                                        <label class="form-label">Map Seed</label>
+                                        <input type="number" class="form-control" id="mapSeed" placeholder="Enter seed">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Map Size (optional)</label>
+                                        <input type="number" class="form-control" id="mapSize" placeholder="e.g., 3500">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Wipe Timer (minutes)</label>
+                                        <input type="number" class="form-control" id="manualWipeTimer" value="5" min="0" max="15">
+                                        <small class="text-muted">0 = instant wipe</small>
+                                    </div>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="announceWipe" checked>
+                                        <label class="form-check-label" for="announceWipe">
+                                            Announce wipe in chat
+                                        </label>
+                                    </div>
+                                    <div class="form-check mb-3">
+                                        <input class="form-check-input" type="checkbox" id="saveBackup" checked>
+                                        <label class="form-check-label" for="saveBackup">
+                                            Create backup before wipe
+                                        </label>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary w-100">
+                                        <i class="bi bi-exclamation-triangle"></i> Start Wipe
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="bi bi-info-circle"></i> Server Status</h5>
+                            </div>
+                            <div class="card-body">
+                                <p><strong>Uptime:</strong> <span id="uptime">-</span></p>
+                                <p><strong>Panel Status:</strong> <span class="badge bg-success">Running</span></p>
+                                <button class="btn btn-secondary" onclick="reconnectRcon()">
+                                    <i class="bi bi-arrow-clockwise"></i> Reconnect RCON
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Schedules Tab -->
+            <div class="tab-pane fade" id="schedules" role="tabpanel">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="bi bi-calendar-event"></i> Scheduled Wipes</h5>
+                        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addScheduleModal">
+                            <i class="bi bi-plus"></i> Add Schedule
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-dark table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Wipe Type</th>
+                                    <th>Map Mode</th>
+                                    <th>Schedule</th>
+                                    <th>Timezone</th>
+                                    <th>Force/Update</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="schedulesTable">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Map Pool Tab -->
+            <div class="tab-pane fade" id="maps" role="tabpanel">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="bi bi-map"></i> Map Pool</h5>
+                        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addMapModal">
+                            <i class="bi bi-plus"></i> Add Map
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted">Add maps to the pool for random selection. You can use seed, URL, or file.</p>
+                        <table class="table table-dark table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Type</th>
+                                    <th>Value</th>
+                                    <th>Size</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="mapsTable">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Custom Files Tab -->
+            <div class="tab-pane fade" id="customfiles" role="tabpanel">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="bi bi-file-earmark-x"></i> Custom Files</h5>
+                        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addCustomFileModal">
+                            <i class="bi bi-plus"></i> Add Rule
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted">Delete custom files/patterns when certain wipe types occur. Use * as wildcard.</p>
+                        <table class="table table-dark table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Pattern</th>
+                                    <th>Wipe Type</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="customFilesTable">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- History Tab -->
+            <div class="tab-pane fade" id="history" role="tabpanel">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-clock-history"></i> Wipe History</h5>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-dark table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Type</th>
+                                    <th>Status</th>
+                                    <th>Duration</th>
+                                </tr>
+                            </thead>
+                            <tbody id="historyTable">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RCON Tab -->
+            <div class="tab-pane fade" id="rcon" role="tabpanel">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-terminal"></i> RCON Console</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="rconOutput" style="background-color: #000; color: #00ff00; height: 400px; overflow-y: auto; padding: 10px; font-family: 'Courier New', monospace; margin-bottom: 10px; border: 1px solid #333;">
+                        </div>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="rconCommand" placeholder="Enter RCON command...">
+                            <button class="btn btn-primary" onclick="sendRconCommand()">
+                                <i class="bi bi-send"></i> Send
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Schedule Modal -->
+    <div class="modal fade" id="addScheduleModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Scheduled Wipe</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addScheduleForm">
+                        <div class="mb-3">
+                            <label class="form-label">Schedule Name</label>
+                            <input type="text" class="form-control" id="scheduleName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Wipe Type</label>
+                            <select class="form-select" id="scheduleWipeType">
+                                <option value="full">Full Wipe</option>
+                                <option value="map">Map Wipe Only</option>
+                                <option value="blueprint">Blueprint Wipe Only</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Map Selection</label>
+                            <select class="form-select" id="scheduleMapMode" onchange="toggleScheduleMapOptions()">
+                                <option value="seed">Specific Seed</option>
+                                <option value="random">Random Seed</option>
+                                <option value="pool">Map Pool</option>
+                            </select>
+                        </div>
+                        <div class="mb-3" id="scheduleSeedDiv">
+                            <label class="form-label">Map Seed</label>
+                            <input type="number" class="form-control" id="scheduleSeed" placeholder="Enter seed">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Map Size (optional)</label>
+                            <input type="number" class="form-control" id="scheduleMapSize" placeholder="e.g., 3500">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Wipe Timer (minutes)</label>
+                            <input type="number" class="form-control" id="scheduleWipeTimer" value="15" min="0" max="15">
+                            <small class="text-muted">0 = instant wipe</small>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Preset Schedule</label>
+                            <select class="form-select" id="schedulePreset" onchange="updateCronFromPreset()">
+                                <option value="custom">Custom (Cron)</option>
+                                <option value="daily">Daily</option>
+                                <option value="weekly_monday">Weekly - Monday</option>
+                                <option value="weekly_wednesday">Weekly - Wednesday</option>
+                                <option value="weekly_friday">Weekly - Friday</option>
+                                <option value="weekly_sunday">Weekly - Sunday</option>
+                                <option value="monthly">Monthly (1st)</option>
+                                <option value="force_wipe_thursday">Force Wipe - First Thursday of Month</option>
+                            </select>
+                        </div>
+                        <div class="mb-3" id="timeDiv">
+                            <label class="form-label">Time (HH:MM)</label>
+                            <input type="time" class="form-control" id="scheduleTime" value="19:00" onchange="updateCronFromPreset()">
+                        </div>
+                        <div class="mb-3" id="cronDiv">
+                            <label class="form-label">Cron Expression</label>
+                            <input type="text" class="form-control" id="cronExpression" placeholder="0 19 * * 4">
+                            <small class="text-muted">Format: minute hour day month weekday</small>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Timezone</label>
+                            <input type="text" class="form-control" id="scheduleTimezone" value="UTC" placeholder="e.g., America/New_York">
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="scheduleIsForceWipe">
+                            <label class="form-check-label" for="scheduleIsForceWipe">
+                                Mark as Force Wipe
+                            </label>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="scheduleUpdateServer">
+                            <label class="form-check-label" for="scheduleUpdateServer">
+                                Update server via Pterodactyl on wipe
+                            </label>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="addSchedule()">Add Schedule</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Map Modal -->
+    <div class="modal fade" id="addMapModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Map to Pool</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addMapForm">
+                        <div class="mb-3">
+                            <label class="form-label">Map Name</label>
+                            <input type="text" class="form-control" id="mapName" required placeholder="e.g., Procedural Map">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Map Type</label>
+                            <select class="form-select" id="poolMapType" onchange="togglePoolMapInput()">
+                                <option value="seed">Seed</option>
+                                <option value="url">URL</option>
+                                <option value="file">File</option>
+                            </select>
+                        </div>
+                        <div class="mb-3" id="poolSeedDiv">
+                            <label class="form-label">Seed</label>
+                            <input type="number" class="form-control" id="poolMapSeed" placeholder="Enter seed">
+                        </div>
+                        <div class="mb-3" id="poolUrlDiv" style="display:none;">
+                            <label class="form-label">URL</label>
+                            <input type="text" class="form-control" id="poolMapUrl" placeholder="https://...">
+                        </div>
+                        <div class="mb-3" id="poolFileDiv" style="display:none;">
+                            <label class="form-label">File Name</label>
+                            <input type="text" class="form-control" id="poolMapFile" placeholder="custom.map">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Map Size (optional)</label>
+                            <input type="number" class="form-control" id="poolMapSize" placeholder="e.g., 3500">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Description (optional)</label>
+                            <input type="text" class="form-control" id="mapDescription" placeholder="Notes">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="addMap()">Add Map</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Custom File Modal -->
+    <div class="modal fade" id="addCustomFileModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Custom File Rule</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addCustomFileForm">
+                        <div class="mb-3">
+                            <label class="form-label">Rule Name</label>
+                            <input type="text" class="form-control" id="customRuleName" required placeholder="e.g., Delete logs">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">File Pattern</label>
+                            <input type="text" class="form-control" id="customRulePattern" required placeholder="e.g., *.log or specific.txt">
+                            <small class="text-muted">Use * for wildcards</small>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Delete on Wipe Type</label>
+                            <select class="form-select" id="customRuleWipeType">
+                                <option value="all">All Wipes</option>
+                                <option value="full">Full Wipe Only</option>
+                                <option value="map">Map Wipe Only</option>
+                                <option value="blueprint">Blueprint Wipe Only</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Description (optional)</label>
+                            <input type="text" class="form-control" id="customRuleDescription" placeholder="Description">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="addCustomFileRule()">Add Rule</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
