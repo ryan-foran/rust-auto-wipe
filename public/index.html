@@ -150,6 +150,9 @@
                 <button class="nav-link" id="customfiles-tab" data-bs-toggle="tab" data-bs-target="#customfiles" type="button">Custom Files</button>
             </li>
             <li class="nav-item" role="presentation">
+                <button class="nav-link" id="discord-tab" data-bs-toggle="tab" data-bs-target="#discord" type="button">Discord</button>
+            </li>
+            <li class="nav-item" role="presentation">
                 <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button">Wipe History</button>
             </li>
             <li class="nav-item" role="presentation">
@@ -316,6 +319,65 @@
                             <tbody id="customFilesTable">
                             </tbody>
                         </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Discord Tab -->
+            <div class="tab-pane fade" id="discord" role="tabpanel">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="bi bi-discord"></i> Discord Integration</h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="discordConfigForm">
+                                    <div class="form-check form-switch mb-3">
+                                        <input class="form-check-input" type="checkbox" id="discordEnabled">
+                                        <label class="form-check-label" for="discordEnabled">
+                                            Enable Discord
+                                        </label>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Webhook URL</label>
+                                        <input type="text" class="form-control" id="discordWebhookUrl" placeholder="https://discord.com/api/webhooks/">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Server Name</label>
+                                        <input type="text" class="form-control" id="discordServerName" placeholder="Rust Server">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Server IP</label>
+                                        <input type="text" class="form-control" id="discordServerIp" placeholder="ip:port">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Embed Color</label>
+                                        <input type="color" class="form-control form-control-color" id="discordSidebarColor" value="#FF0000">
+                                    </div>
+                                    <button type="submit" class="btn btn-primary w-100 mb-2">
+                                        Save
+                                    </button>
+                                    <button type="button" class="btn btn-secondary w-100" onclick="testDiscord()">
+                                        Test Webhook
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Notifications</h5>
+                            </div>
+                            <div class="card-body">
+                                <ul class="list-unstyled">
+                                    <li class="mb-2">✓ <strong>Wipe Countdown</strong> - Sent 1 hour before wipe (or at timer time)</li>
+                                    <li class="mb-2">✓ <strong>Just Wiped</strong> - Sent when wipe completes</li>
+                                </ul>
+                                <p class="text-muted small">Embeds use Discord timestamp for countdowns.</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -619,12 +619,75 @@ socket.on('schedule:executed', (data) => {
     console.log('Schedule executed:', data);
 });
 
+// Discord functions
+async function loadDiscordConfig() {
+    try {
+        const response = await fetch('/api/discord/config');
+        const data = await response.json();
+        if (data.success) {
+            document.getElementById('discordEnabled').checked = data.config.enabled;
+            document.getElementById('discordWebhookUrl').value = data.config.webhookUrl || '';
+            document.getElementById('discordServerName').value = data.config.serverName || '';
+            document.getElementById('discordServerIp').value = data.config.serverIp || '';
+            document.getElementById('discordSidebarColor').value = data.config.sidebarColor || '#FF0000';
+        }
+    } catch (error) {
+        console.error('Failed to load Discord config:', error);
+    }
+}
+
+const discordForm = document.getElementById('discordConfigForm');
+if (discordForm) {
+    discordForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const config = {
+            enabled: document.getElementById('discordEnabled').checked,
+            webhookUrl: document.getElementById('discordWebhookUrl').value,
+            serverName: document.getElementById('discordServerName').value,
+            serverIp: document.getElementById('discordServerIp').value,
+            sidebarColor: document.getElementById('discordSidebarColor').value
+        };
+        
+        try {
+            const response = await fetch('/api/discord/config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(config)
+            });
+            const data = await response.json();
+            if (data.success) {
+                alert('Saved');
+            } else {
+                alert('Failed: ' + data.error);
+            }
+        } catch (error) {
+            alert('Error: ' + error.message);
+        }
+    });
+}
+
+async function testDiscord() {
+    try {
+        const response = await fetch('/api/discord/test', { method: 'POST' });
+        const data = await response.json();
+        if (data.success) {
+            alert('Test sent');
+        } else {
+            alert('Failed: ' + (data.message || data.error));
+        }
+    } catch (error) {
+        alert('Error: ' + error.message);
+    }
+}
+
 // Initialize
 updateStatus();
 loadSchedules();
 loadHistory();
 loadMaps();
 loadCustomFiles();
+loadDiscordConfig();
 setInterval(updateStatus, 30000);
 setInterval(loadSchedules, 60000);
 updateCronFromPreset();

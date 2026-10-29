@@ -13,6 +13,7 @@ const WipeManager = require('./wipeManager');
 const WipeScheduler = require('./scheduler');
 const MapManager = require('./mapManager');
 const CustomFilesManager = require('./customFiles');
+const DiscordManager = require('./discord');
 
 const app = express();
 const server = http.createServer(app);
@@ -43,6 +44,7 @@ const wipeManager = new WipeManager(rcon, process.env.RUST_SERVER_DIR, io);
 const scheduler = new WipeScheduler(wipeManager, io);
 const mapManager = new MapManager();
 const customFilesManager = new CustomFilesManager(process.env.RUST_SERVER_DIR);
+const discordManager = new DiscordManager();
 
 // Connect to RCON on startup
 rcon.connect().catch(err => {
@@ -282,6 +284,29 @@ app.get('/api/rcon/reconnect', async (req, res) => {
         await rcon.disconnect();
         const connected = await rcon.connect();
         res.json({ success: connected, rconConnected: rcon.connected });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Discord routes
+app.get('/api/discord/config', (req, res) => {
+    res.json({ success: true, config: discordManager.getConfig() });
+});
+
+app.post('/api/discord/config', (req, res) => {
+    try {
+        const config = discordManager.updateConfig(req.body);
+        res.json({ success: true, config });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+app.post('/api/discord/test', async (req, res) => {
+    try {
+        const result = await discordManager.test();
+        res.json({ success: result.success, message: result.message });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
     }

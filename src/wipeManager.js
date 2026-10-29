@@ -4,6 +4,7 @@ const { v4: uuidv4 } = require('uuid');
 const MapManager = require('./mapManager');
 const CustomFilesManager = require('./customFiles');
 const PterodactylManager = require('./pterodactyl');
+const DiscordManager = require('./discord');
 
 class WipeManager {
     constructor(rcon, serverDir, io = null) {
@@ -14,6 +15,7 @@ class WipeManager {
         this.mapManager = new MapManager();
         this.customFilesManager = new CustomFilesManager(this.serverDir);
         this.pterodactyl = new PterodactylManager();
+        this.discord = new DiscordManager();
         this.loadHistory();
     }
 
@@ -80,6 +82,12 @@ class WipeManager {
                 let timerMinutes = wipeTimerMinutes;
                 if (timerMinutes === null || timerMinutes === undefined) {
                     timerMinutes = 5; // default for manual
+                }
+                
+                if (timerMinutes >= 60) {
+                    this.discord.wipeCountdown(60).catch(() => {});
+                } else if (timerMinutes > 0) {
+                    this.discord.wipeCountdown(timerMinutes).catch(() => {});
                 }
                 
                 if (timerMinutes > 0) {
@@ -199,6 +207,8 @@ class WipeManager {
             wipeRecord.status = 'completed';
             wipeRecord.endTime = new Date().toISOString();
             wipeRecord.duration = (new Date() - startTime) / 1000;
+            
+            this.discord.justWiped().catch(() => {});
             
             this.saveHistory();
             await this.broadcast('wipe:complete', wipeRecord);
