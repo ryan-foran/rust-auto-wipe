@@ -123,7 +123,3 @@ Access `http://your-ip:3000` and login with your admin credentials.
 - Restrict access to panel (firewall/VPN)
 - Use HTTPS in production
 - Keep Pterodactyl API keys secure
-
-## License
-
-MIT License
